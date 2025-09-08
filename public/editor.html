@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SP Visual Code - Editor</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="editor.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/monaco-editor@latest/min/vs/loader.js"></script>
+</head>
+<body class="editor-body">
+    <div id="editor-app">
+        <!-- Header del Editor -->
+        <header class="editor-header">
+            <div class="editor-header-left">
+                <div class="logo" onclick="goHome()">
+                    <i class="fas fa-code"></i>
+                    <span>SP Visual Code</span>
+                </div>
+                <div class="project-info">
+                    <span id="project-name">Sin título</span>
+                    <span class="project-domain" id="project-domain">mi-proyecto.spvisualcode.com</span>
+                </div>
+            </div>
+            <div class="editor-header-center">
+                <div class="editor-actions">
+                    <button class="btn btn-sm btn-success" onclick="runCode()" title="Ejecutar (Ctrl+Enter)">
+                        <i class="fas fa-play"></i>
+                        Ejecutar
+                    </button>
+                    <button class="btn btn-sm btn-outline" onclick="saveProject()" title="Guardar (Ctrl+S)">
+                        <i class="fas fa-save"></i>
+                        Guardar
+                    </button>
+                    <button class="btn btn-sm btn-outline" onclick="shareProject()" title="Compartir">
+                        <i class="fas fa-share"></i>
+                        Compartir
+                    </button>
+                </div>
+            </div>
+            <div class="editor-header-right">
+                <div class="user-menu">
+                    <div class="user-avatar" onclick="toggleUserDropdown()">
+                        <i class="fas fa-user"></i>
+                        <span id="username-editor"></span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div id="user-dropdown-editor" class="dropdown" style="display: none;">
+                        <a href="/" class="dropdown-item">
+                            <i class="fas fa-home"></i>
+                            Inicio
+                        </a>
+                        <a href="#" class="dropdown-item" onclick="showProjectsPanel()">
+                            <i class="fas fa-folder"></i>
+                            Mis Proyectos
+                        </a>
+                        <a href="#" class="dropdown-item">
+                            <i class="fas fa-cog"></i>
+                            Configuración
+                        </a>
+                        <div id="admin-link-editor" style="display: none;">
+                            <a href="/admin" class="dropdown-item">
+                                <i class="fas fa-shield-alt"></i>
+                                Panel Admin
+                            </a>
+                        </div>
+                        <hr class="dropdown-divider">
+                        <a href="#" class="dropdown-item" onclick="logout()">
+                            <i class="fas fa-sign-out-alt"></i>
+                            Cerrar Sesión
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Cuerpo Principal del Editor -->
+        <main class="editor-main">
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <div class="sidebar-header">
+                    <h3>Explorador</h3>
+                    <button class="btn btn-sm" onclick="createNewFile()" title="Nuevo archivo">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+                <div class="file-tree" id="file-tree">
+                    <div class="file-item active" onclick="selectFile('index.html')">
+                        <i class="fab fa-html5" style="color: #e34c26;"></i>
+                        <span>index.html</span>
+                    </div>
+                    <div class="file-item" onclick="selectFile('style.css')">
+                        <i class="fab fa-css3-alt" style="color: #1572b6;"></i>
+                        <span>style.css</span>
+                    </div>
+                    <div class="file-item" onclick="selectFile('script.js')">
+                        <i class="fab fa-js-square" style="color: #f7df1e;"></i>
+                        <span>script.js</span>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Área del Editor -->
+            <section class="editor-section">
+                <div class="editor-tabs">
+                    <div class="tab active" id="tab-index.html">
+                        <i class="fab fa-html5"></i>
+                        <span>index.html</span>
+                        <button class="tab-close" onclick="closeTab('index.html')">&times;</button>
+                    </div>
+                </div>
+                <div class="editor-container">
+                    <div id="monaco-editor"></div>
+                </div>
+            </section>
+
+            <!-- Panel de Salida -->
+            <section class="output-section">
+                <div class="output-header">
+                    <div class="output-tabs">
+                        <button class="output-tab active" onclick="switchOutputTab('preview')">
+                            <i class="fas fa-eye"></i>
+                            Vista Previa
+                        </button>
+                        <button class="output-tab" onclick="switchOutputTab('console')">
+                            <i class="fas fa-terminal"></i>
+                            Consola
+                        </button>
+                    </div>
+                </div>
+                <div class="output-content">
+                    <div id="preview-panel" class="output-panel active">
+                        <iframe id="preview-iframe" src="about:blank"></iframe>
+                    </div>
+                    <div id="console-panel" class="output-panel">
+                        <div class="console-content" id="console-content">
+                            <div class="console-line">
+                                <span class="console-prompt">$</span>
+                                <span class="console-text">Bienvenido a SP Visual Code</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Panel de Proyectos -->
+    <div id="projects-panel" class="modal" style="display: none;">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2>Mis Proyectos</h2>
+                <span class="close" onclick="closeModal('projects-panel')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="projects-actions">
+                    <button class="btn btn-primary" onclick="showNewProjectModal()">
+                        <i class="fas fa-plus"></i>
+                        Nuevo Proyecto
+                    </button>
+                    <div class="projects-stats">
+                        <span>Proyectos: <strong id="projects-count">0</strong>/30</span>
+                    </div>
+                </div>
+                <div class="projects-grid" id="projects-grid">
+                    <!-- Los proyectos se cargarán aquí dinámicamente -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Nuevo Proyecto -->
+    <div id="new-project-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Crear Nuevo Proyecto</h2>
+                <span class="close" onclick="closeModal('new-project-modal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="new-project-form" onsubmit="createNewProject(event)">
+                    <div class="form-group">
+                        <label for="project-name-input">Nombre del Proyecto</label>
+                        <input type="text" id="project-name-input" required placeholder="mi-proyecto-increible">
+                    </div>
+                    <div class="form-group">
+                        <label for="project-template">Plantilla</label>
+                        <select id="project-template">
+                            <option value="html">HTML/CSS/JS</option>
+                            <option value="react">React</option>
+                            <option value="vanilla">JavaScript Vanilla</option>
+                            <option value="blank">Proyecto Vacío</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="project-public">
+                            Hacer proyecto público
+                        </label>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-full">
+                        <i class="fas fa-plus"></i>
+                        Crear Proyecto
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Compartir -->
+    <div id="share-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Compartir Proyecto</h2>
+                <span class="close" onclick="closeModal('share-modal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="share-section">
+                    <h3>Enlace Público</h3>
+                    <div class="share-link">
+                        <input type="text" id="share-url" readonly>
+                        <button class="btn btn-outline" onclick="copyShareLink()">
+                            <i class="fas fa-copy"></i>
+                            Copiar
+                        </button>
+                    </div>
+                </div>
+                <div class="share-section">
+                    <h3>Configuración de Privacidad</h3>
+                    <label>
+                        <input type="checkbox" id="project-public-share">
+                        Permitir acceso público
+                    </label>
+                    <p class="help-text">Cuando está habilitado, cualquier persona con el enlace puede ver tu proyecto.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="main.js"></script>
+    <script src="editor.js"></script>
+</body>
+</html>

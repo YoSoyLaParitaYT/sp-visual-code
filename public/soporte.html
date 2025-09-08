@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Soporte Ticker Web</title>
+<style>
+  body {
+    margin:0;
+    font-family: Arial, sans-serif;
+    background:#0f1724;
+    color:#fff;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:flex-start;
+    min-height:100vh;
+    padding:20px;
+  }
+  h1 { margin-bottom:20px; }
+  #ticker {
+    width:100%;
+    max-width:800px;
+    height:50px;
+    background:#1e293b;
+    border-radius:8px;
+    overflow:hidden;
+    display:flex;
+    align-items:center;
+    padding:0 10px;
+    box-sizing:border-box;
+    margin-bottom:20px;
+  }
+  #ticker span {
+    display:inline-block;
+    white-space:nowrap;
+    padding-right:50px;
+    animation: scroll 15s linear infinite;
+  }
+  @keyframes scroll {
+    0% { transform:translateX(100%); }
+    100% { transform:translateX(-100%); }
+  }
+  form {
+    width:100%;
+    max-width:800px;
+    background:#1e293b;
+    padding:15px;
+    border-radius:8px;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  input, textarea {
+    width:100%;
+    padding:10px;
+    border:none;
+    border-radius:5px;
+    background:#0f1724;
+    color:#fff;
+  }
+  button {
+    background:#06b6d4;
+    color:#000;
+    font-weight:bold;
+    padding:10px;
+    border:none;
+    border-radius:5px;
+    cursor:pointer;
+  }
+  #log {
+    width:100%;
+    max-width:800px;
+    background:#1e293b;
+    margin-top:20px;
+    padding:10px;
+    border-radius:8px;
+    max-height:200px;
+    overflow:auto;
+    font-size:14px;
+  }
+</style>
+</head>
+<body>
+  <h1>Soporte Ticker</h1>
+  <div id="ticker"><span id="tickerText">Bienvenido al sistema de soporte ✨</span></div>
+
+  <form id="msgForm">
+    <input type="text" id="title" placeholder="Título (opcional)">
+    <textarea id="message" placeholder="Escribe tu mensaje..." required></textarea>
+    <input type="text" id="webhook" placeholder="Webhook URL (opcional)">
+    <button type="submit">Enviar</button>
+  </form>
+
+  <div id="log"></div>
+
+<script>
+  const tickerText = document.getElementById("tickerText");
+  const form = document.getElementById("msgForm");
+  const logBox = document.getElementById("log");
+
+  function log(msg){
+    const time = new Date().toLocaleTimeString();
+    logBox.innerHTML = `[${time}] ${msg}<br>` + logBox.innerHTML;
+  }
+
+  form.addEventListener("submit", async (e)=>{
+    e.preventDefault();
+    const title = document.getElementById("title").value.trim();
+    const message = document.getElementById("message").value.trim();
+    const webhook = document.getElementById("webhook").value.trim();
+    if(!message) return alert("Escribe un mensaje");
+
+    // Mostrar en ticker
+    tickerText.textContent = title ? `${title}: ${message}` : message;
+    log("Mensaje añadido al ticker");
+
+    // Enviar a webhook (si se puso)
+    if(webhook){
+      try{
+        const payload = { content: title ? `**${title}**\n${message}` : message };
+        const res = await fetch(webhook, {
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body:JSON.stringify(payload)
+        });
+        if(res.ok){
+          log("Enviado al webhook correctamente");
+        }else{
+          log("Error al enviar webhook: "+res.status);
+        }
+      }catch(err){
+        log("Error: "+err.message);
+      }
+    }
+
+    form.reset();
+  });
+</script>
+</body>
+</html>
